@@ -16,9 +16,9 @@ PATH = Path("stars.json")
 PAGE = "List_of_stars_on_the_Hollywood_Walk_of_Fame"
 SOURCE = "https://en.wikipedia.org/wiki/" + PAGE
 API = "https://en.wikipedia.org/w/api.php?"
-CATS = {"motion pictures":"film","film":"film","television":"tv","tv":"tv","recording":"music","music":"music","radio":"radio","live theatre":"theatre","live theater":"theatre","theatre":"theatre","sports entertainment":"sport","sports":"sport"}
+CATS = {"motion pictures":"film","film":"film","television":"tv","tv":"tv","recording":"music","music":"music","radio":"radio","live performance":"theatre","live theatre":"theatre","live theater":"theatre","theatre":"theatre","sports entertainment":"sport","sports":"sport"}
 def norm(s):
-    return " ".join(str(s or "").split())
+    return " ".join(re.sub(r"\\[[^\\]]*\\]","",str(s or "")).split())
 def key(e):
     return tuple(norm(e.get(k)).casefold() for k in ("name","category","address"))
 def nc(e):
