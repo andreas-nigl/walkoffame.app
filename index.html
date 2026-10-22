@@ -20,8 +20,8 @@ async function importWikipedia(){let btn=$("importwiki");btn.disabled=true;btn.t
 try{let saved=JSON.parse(localStorage.getItem("wof-wikipedia-import")||"[]");let keys=new Set(entries.map(e=>[e.name,e.category,e.address].join("|")));for(let e of saved){let k=[e.name,e.category,e.address].join("|");if(!keys.has(k)){entries.push(e);keys.add(k)}}}catch{}
 function starKey(e){return [e.name,e.category,e.address].map(v=>String(v||"").normalize("NFKC").replace(/\s+/g," ").replace(/(block)of/gi,"$1 of").trim().toLocaleLowerCase()).join("|")}
 function cleanupDuplicateStars(){
-  const used=new Set();let removed=0;
-  entries=entries.filter(e=>{const k=starKey(e);if(used.has(k)){removed++;return false}used.add(k);return true});
+  const used=new Set();const detailedNames=new Set(entries.filter(e=>e.category!=="unknown").map(e=>String(e.name||"").normalize("NFKC").trim().toLowerCase()));let removed=0;
+  entries=entries.filter(e=>{if(e.category==="unknown"&&detailedNames.has(String(e.name||"").normalize("NFKC").trim().toLowerCase())){removed++;return false}const k=starKey(e);if(used.has(k)){removed++;return false}used.add(k);return true});
   if(removed)console.info("Identische Sterneinträge entfernt:",removed);
 }
 const walkSequenceKey="wof-walk-verified-sequence";
