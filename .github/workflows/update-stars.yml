@@ -20,12 +20,16 @@ jobs:
         run: python scripts/update_stars.py
       - name: Reconcile Hollywood Chamber official honoree names
         run: python scripts/reconcile_official.py
+      - name: Audit physical star identities and duplicate candidates
+        run: python scripts/audit_star_identity.py
       - name: Upload review report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: star-catalog-review
-          path: update-report.json
+          path: |
+            update-report.json
+            catalog-quality-report.json
           if-no-files-found: ignore
           retention-days: 30
       - name: Open review issue for address discrepancies
