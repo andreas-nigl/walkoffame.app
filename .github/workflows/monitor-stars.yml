@@ -1,0 +1,37 @@
+name: Walk of Fame refresh watchdog
+on:
+  schedule:
+    - cron: "42 9 * * *"
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+  issues: write
+jobs:
+  watchdog:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check latest catalog refresh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import os,json,subprocess,datetime as dt
+          repo=os.environ["GITHUB_REPOSITORY"]
+          raw=subprocess.check_output(["gh","api",f"repos/{repo}/actions/workflows/update-stars.yml/runs?per_page=10"],text=True)
+          runs=json.loads(raw).get("workflow_runs",[])
+          scheduled=[r for r in runs if r.get("event") in ("schedule","workflow_dispatch")]
+          latest=scheduled[0] if scheduled else None
+          now=dt.datetime.now(dt.timezone.utc)
+          stale=not latest or (now-dt.datetime.fromisoformat(latest["created_at"].replace("Z","+00:00"))).total_seconds()>48*3600
+          failed=bool(latest and latest.get("status")=="completed" and latest.get("conclusion")!="success")
+          if not (stale or failed):
+              print("Watchdog OK: latest refresh",latest.get("html_url"))
+              quit()
+          title="Alarm: Walk-of-Fame-Datenaktualisierung seit über 48 h ausgefallen" if stale else "Alarm: Walk-of-Fame-Datenaktualisierung fehlgeschlagen"
+          message=f"Automatischer Watchdog {now.isoformat()}: "+("kein abgeschlossener regulärer Lauf innerhalb 48 Stunden" if stale else "letzter Workflow nicht erfolgreich")+f". Letzter Lauf: {latest.get('html_url') if latest else 'keiner'}. Bitte Logs und GitHub Actions Zeitplan prüfen."
+          existing=json.loads(subprocess.check_output(["gh","issue","list","-R",repo,"--state","open","--json","number,title"],text=True))
+          same=next((x for x in existing if x["title"]==title),None)
+          if same:subprocess.check_call(["gh","issue","comment","-R",repo,str(same["number"]),"--body",message])
+          else:subprocess.check_call(["gh","issue","create","-R",repo,"--title",title,"--body",message])
+          PY
