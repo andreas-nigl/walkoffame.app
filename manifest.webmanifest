@@ -1,0 +1,18 @@
+{
+  "name": "Hollywood Walk of Fame Explorer",
+  "short_name": "Walk of Fame",
+  "description": "Sterne auf dem Hollywood Walk of Fame finden und Gehwegfolgen dokumentieren",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#152338",
+  "theme_color": "#152338",
+  "icons": [
+    {
+      "src": "./wof-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
