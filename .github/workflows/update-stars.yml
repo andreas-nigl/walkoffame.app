@@ -19,6 +19,35 @@ jobs:
         run: python scripts/update_stars.py
       - name: Reconcile Hollywood Chamber official honoree names
         run: python scripts/reconcile_official.py
+      - name: Upload review report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: star-catalog-review
+          path: update-report.json
+          if-no-files-found: ignore
+          retention-days: 30
+      - name: Open review issue for address discrepancies
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          if not Path("update-report.json").exists(): quit()
+          r=json.loads(Path("update-report.json").read_text())
+          changes=r.get("address_change_candidates",[])
+          if not changes: quit()
+          lines=["Automatisch erfasste Adresskonflikte. **Nicht automatisch ändern**. Prüfen mit Wikipedia-Revision, offizieller Chamber und gegebenenfalls Foto/Standortbelegen.","",f"Workflow: {os.environ.get('GITHUB_RUN_ID')}",""]
+          for x in changes[:30]:
+              lines.append(f"- **{x.get('name')}** ({x.get('category')}): Wikipedia `{x.get('wikipedia_address')}`, Bestand `{', '.join(x.get('current_addresses',[]))}`")
+          Path("review-issue.md").write_text("\n".join(lines)+"\n")
+          PY
+          if [ -s review-issue.md ]; then
+            existing=$(gh issue list --state open --search "Datenprüfung: Wikipedia-Adresskonflikte in:title" --json number --jq '.[0].number')
+            if [ -z "$existing" ]; then gh issue create --title "Datenprüfung: Wikipedia-Adresskonflikte" --body-file review-issue.md; fi
+          fi
       - name: Commit catalog if changed
         run: |
           git config user.name "github-actions[bot]"
@@ -27,4 +56,20 @@ jobs:
           if ! git diff --cached --quiet; then
             git commit -m "data: refresh Wikipedia star catalog and provenance"
             git push
+          fi
+
+  notify_failure:
+    needs: refresh
+    if: ${{ always() && needs.refresh.result == 'failure' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Open GitHub issue on failed refresh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          existing=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "Alarm: Walk-of-Fame-Katalog-Update fehlgeschlagen in:title" --json number --jq '.[0].number')
+          if [ -z "$existing" ]; then
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "Alarm: Walk-of-Fame-Katalog-Update fehlgeschlagen" --body "GitHub Actions Katalogaktualisierung fehlgeschlagen: https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID. Bitte die Logs prüfen."
+          else
+            gh issue comment --repo "$GITHUB_REPOSITORY" "$existing" --body "Erneuter Fehlschlag: https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
           fi
