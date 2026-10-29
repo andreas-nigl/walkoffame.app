@@ -1,5 +1,9 @@
 name: Update Hollywood offline vector streets
 on:
+  push:
+    paths:
+      - ".github/workflows/update-vectors.yml"
+      - "scripts/build_osm_vectors.py"
   workflow_dispatch:
   schedule:
     - cron: "31 6 * * 1"
