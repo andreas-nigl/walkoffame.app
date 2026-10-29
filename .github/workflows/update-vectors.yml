@@ -1,0 +1,27 @@
+name: Update Hollywood offline vector streets
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "31 6 * * 1"
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Fetch OSM paths and roads as GeoJSON
+        run: python scripts/build_osm_vectors.py
+      - name: Publish OSM vector asset
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add hollywood-roads.geojson
+          if ! git diff --cached --quiet; then
+            git commit -m "data: refresh OSM Hollywood streets vector package"
+            git push
+          fi
