@@ -1,0 +1,19 @@
+{
+  "id": "./survey.html",
+  "name": "Walk of Fame – Gehweg-Erfassung",
+  "short_name": "WoF Erfassung",
+  "description": "Offline-Erfassung von Sternen, Sternreihen, Sonderabständen und Fotobelegen",
+  "start_url": "./survey.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#152338",
+  "theme_color": "#152338",
+  "icons": [
+    {
+      "src": "./wof-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
