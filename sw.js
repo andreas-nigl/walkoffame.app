@@ -1,6 +1,6 @@
 /* Offline app shell + latest verified data file; no third-party map tiles are bulk cached. */
-const CACHE="walkoffame-shell-v2",DATA_CACHE="walkoffame-data-v2";
-self.addEventListener("install",ev=>{ev.waitUntil(caches.open(CACHE).then(c=>c.addAll(["./","./index.html","./survey.html","./manifest.webmanifest","./wof-icon.svg"])).then(()=>self.skipWaiting()))});
+const CACHE="walkoffame-shell-v3",DATA_CACHE="walkoffame-data-v3";
+self.addEventListener("install",ev=>{ev.waitUntil(caches.open(CACHE).then(c=>c.addAll(["./","./index.html","./survey.html","./survey.webmanifest","./manifest.webmanifest","./wof-icon.svg"])).then(()=>self.skipWaiting()))});
 self.addEventListener("activate",ev=>{ev.waitUntil(Promise.all([caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith("walkoffame-")&&!([CACHE,DATA_CACHE].includes(k))).map(k=>caches.delete(k)))),self.clients.claim()]))});
 self.addEventListener("fetch",ev=>{
  const req=ev.request;
