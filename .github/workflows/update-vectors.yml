@@ -21,5 +21,17 @@ jobs:
           git add hollywood-roads.geojson
           if ! git diff --cached --quiet; then
             git commit -m "data: refresh OSM Hollywood streets vector package"
-            git push
+            for attempt in 1 2 3; do
+              git fetch origin main
+              git rebase origin/main
+              if git push origin HEAD:main; then
+                exit 0
+              fi
+              echo "Concurrent repository update; retry $attempt/3"
+              sleep 3
+            done
+            echo "Could not publish vector map after three rebase/push attempts."
+            exit 1
+          else
+            echo "Hollywood vector map unchanged; no Git commit needed."
           fi
