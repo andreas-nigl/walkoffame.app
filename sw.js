@@ -1,16 +1,31 @@
-/* Offline app shell + latest verified data file; no third-party map tiles are bulk cached. */
-const CACHE="walkoffame-shell-v3",DATA_CACHE="walkoffame-data-v3";
-self.addEventListener("install",ev=>{ev.waitUntil(caches.open(CACHE).then(c=>c.addAll(["./","./index.html","./survey.html","./survey.webmanifest","./manifest.webmanifest","./wof-icon.svg"])).then(()=>self.skipWaiting()))});
-self.addEventListener("activate",ev=>{ev.waitUntil(Promise.all([caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith("walkoffame-")&&!([CACHE,DATA_CACHE].includes(k))).map(k=>caches.delete(k)))),self.clients.claim()]))});
-self.addEventListener("fetch",ev=>{
- const req=ev.request;
- if(req.method!=="GET"||new URL(req.url).origin!==self.location.origin)return;
- const path=new URL(req.url).pathname;
+/* PWA offline shell. Data from OSM stays local; no third-party map tile prefetch. */
+const CACHE="walkoffame-shell-v4",DATA_CACHE="walkoffame-data-v4";
+const SHELL=["./","./index.html","./survey.html","./survey.webmanifest","./manifest.webmanifest","./wof-icon.svg"];
+self.addEventListener("install",event=>{
+ event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)).then(()=>self.skipWaiting()));
+});
+self.addEventListener("activate",event=>{
+ event.waitUntil(Promise.all([
+  caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith("walkoffame-")&&![CACHE,DATA_CACHE].includes(key)).map(key=>caches.delete(key)))),
+  self.clients.claim()
+ ]));
+});
+self.addEventListener("fetch",event=>{
+ const request=event.request;
+ if(request.method!=="GET"||new URL(request.url).origin!==self.location.origin)return;
+ const path=new URL(request.url).pathname;
  if(path.endsWith("/stars.json")||path.endsWith("/hollywood-roads.geojson")){
-  ev.respondWith(fetch(req).then(async response=>{if(response.ok){const c=await caches.open(DATA_CACHE);await c.put(req,response.clone())}return response}).catch(()=>caches.match(req)));
+  event.respondWith(fetch(request).then(async response=>{
+    if(response.ok){try{const cache=await caches.open(DATA_CACHE);await cache.put(request,response.clone())}catch(err){console.warn("Datencache nicht verfügbar",err)}}
+    return response;
+  }).catch(async()=>await caches.match(request)||Response.error()));
   return;
  }
- if(req.mode==="navigate"){
-  ev.respondWith(fetch(req).then(async response=>{if(response.ok){const c=await caches.open(CACHE);await c.put("./index.html",response.clone())}return response}).catch(async()=>await caches.match("./index.html")||Response.error()));
+ if(request.mode==="navigate"){
+  const target=path.endsWith("/survey.html")?"./survey.html":"./index.html";
+  event.respondWith(fetch(request).then(async response=>{
+    if(response.ok){try{const cache=await caches.open(CACHE);await cache.put(target,response.clone())}catch(err){console.warn("Seiten-Cache nicht verfügbar",err)}}
+    return response;
+  }).catch(async()=>await caches.match(target)||Response.error()));
  }
 });
