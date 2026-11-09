@@ -10,7 +10,7 @@ QUERY="""[out:json][timeout:90];
  way["highway"~"^(primary|secondary|tertiary|residential|living_street|pedestrian|footway|path|service|steps|crossing)$"](%s,%s,%s,%s);
 );
 out geom;""" % BBOX
-ENDPOINTS=["https://overpass.kumi.systems/api/interpreter","https://overpass-api.de/api/interpreter","https://overpass.nchc.org.tw/api/interpreter"]
+ENDPOINTS=["https://overpass.kumi.systems/api/interpreter","https://overpass-api.de/api/interpreter","https://overpass.private.coffee/api/interpreter"]
 def download():
     last=None
     for endpoint in ENDPOINTS:
@@ -22,7 +22,17 @@ def download():
             print(endpoint, type(e).__name__,e)
     raise RuntimeError("All OSM Overpass endpoints failed: "+str(last))
 def main():
-    obj=download();features=[];seen=set()
+    try:
+        obj=download()
+    except Exception as error:
+        existing=pathlib.Path('hollywood-roads.geojson')
+        if existing.is_file():
+            previous=json.loads(existing.read_text(encoding='utf-8'))
+            if previous.get('type')=='FeatureCollection' and len(previous.get('features',[]))>=100:
+                print('OSM unavailable, retaining existing valid offline map:',error)
+                return
+        raise
+    features=[];seen=set()
     for way in obj.get("elements",[]):
         if way.get("type")!="way" or way.get("id") in seen:continue
         coords=[[round(pt["lon"],7),round(pt["lat"],7)] for pt in way.get("geometry",[]) if "lon" in pt and "lat" in pt]
