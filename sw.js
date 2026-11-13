@@ -1,6 +1,6 @@
 /* PWA offline shell. Data from OSM stays local; no third-party map tile prefetch. */
-const CACHE="walkoffame-shell-v4",DATA_CACHE="walkoffame-data-v4";
-const SHELL=["./","./index.html","./survey.html","./survey.webmanifest","./manifest.webmanifest","./wof-icon.svg"];
+const CACHE="walkoffame-shell-v4-261113-icons",DATA_CACHE="walkoffame-data-v4";
+const SHELL=["./","./index.html","./survey.html","./survey.webmanifest","./manifest.webmanifest","./wof-icon.svg","./gehweg/icon.svg","./walkoffame/icon.svg"];
 self.addEventListener("install",event=>{
  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)).then(()=>self.skipWaiting()));
 });
@@ -29,3 +29,4 @@ self.addEventListener("fetch",event=>{
   }).catch(async()=>await caches.match(target)||Response.error()));
  }
 });
+
